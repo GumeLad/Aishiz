@@ -1,40 +1,52 @@
-package com.example.Ai Shiz
+package com.example.aishiz
 
 import android.os.Bundle
+import android.view.View
+import android.widget.Button
+import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import com.example.aishiz.ml.MobilenetV2Imagenet
+import org.tensorflow.lite.DataType
+import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 
 class MainActivity : AppCompatActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        val textView = TextView(this)
-        textView.text = "Hello, Offline AI!"
-        setContentView(textView)
-    }
-}
-
-private lateinit var binding: ActivityMainBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
 
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+        val runModelButton: Button = findViewById(R.id.btnRunModel)
+        val resultTextView: TextView = findViewById(R.id.tvResult)
+        val progressBar: ProgressBar = findViewById(R.id.progressBar)
 
-        // Example of a call to a native method
-        binding.sampleText.text = stringFromJNI()
-    }
+        runModelButton.setOnClickListener {
+            resultTextView.text = "Running model..."
+            progressBar.visibility = View.VISIBLE
 
-    /**
-     * A native method that is implemented by the 'aishiz' native library,
-     * which is packaged with this application.
-     */
-    external fun stringFromJNI(): String
+            val model = MobilenetV2Imagenet.newInstance(this)
 
-    companion object {
-        // Used to load the 'aishiz' library on application startup.
-        init {
-            System.loadLibrary("aishiz")
+            val inputFeature0 = TensorBuffer.createFixedSize(
+                intArrayOf(1, 224, 224, 3),
+                DataType.FLOAT32
+            )
+
+            val byteCount = 1 * 224 * 224 * 3 * 4
+            val byteBuffer = ByteBuffer.allocateDirect(byteCount)
+            byteBuffer.order(ByteOrder.nativeOrder())
+            inputFeature0.loadBuffer(byteBuffer)
+
+            val outputs = model.process(inputFeature0)
+            val outputFeature0 = outputs.outputFeature0AsTensorBuffer
+            val outputArray = outputFeature0.floatArray
+            val firstValue = outputArray.firstOrNull()
+
+            resultTextView.text = "Model ran. First value: $firstValue"
+            progressBar.visibility = View.GONE
+
+            model.close()
         }
     }
 }

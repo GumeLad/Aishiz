@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- App-internal storage files (/data/data/<pkg>/files) -->
+    <files-path
+        name="internal_files"
+        path="." />
+
+    <!-- App-internal cache (/data/data/<pkg>/cache) -->
+    <cache-path
+        name="internal_cache"
+        path="." />
+
+    <!-- External app-specific files (Android/data/<pkg>/files) -->
+    <external-files-path
+        name="external_files"
+        path="." />
+
+    <!-- External app-specific pictures dir -->
+    <external-files-path
+        name="external_pictures"
+        path="Pictures/" />
+
+    <!-- Public external Pictures (if you specifically need it on older API) -->
+    <!-- <external-path name="public_pictures" path="Pictures/"/> -->
+</paths>
