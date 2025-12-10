@@ -1,52 +1,91 @@
 package com.example.aishiz
 
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.widget.Button
-import android.widget.ProgressBar
+import android.widget.EditText
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import com.example.aishiz.ml.MobilenetV2Imagenet
-import org.tensorflow.lite.DataType
-import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 
 class MainActivity : AppCompatActivity() {
+
+    private lateinit var messages: RecyclerView
+    private lateinit var promptInput: EditText
+    private lateinit var sendButton: Button
+    private val chatAdapter = ChatAdapter()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val runModelButton: Button = findViewById(R.id.btnRunModel)
-        val resultTextView: TextView = findViewById(R.id.tvResult)
-        val progressBar: ProgressBar = findViewById(R.id.progressBar)
+        messages = findViewById(R.id.messages)
+        promptInput = findViewById(R.id.promptInput)
+        sendButton = findViewById(R.id.sendButton)
 
-        runModelButton.setOnClickListener {
-            resultTextView.text = "Running model..."
-            progressBar.visibility = View.VISIBLE
+        messages.layoutManager = LinearLayoutManager(this)
+        messages.adapter = chatAdapter
 
-            val model = MobilenetV2Imagenet.newInstance(this)
+        sendButton.setOnClickListener {
+            val prompt = promptInput.text.toString()
+            if (prompt.isNotBlank()) {
+                addMessage(prompt, "user")
+                promptInput.text.clear()
+                // TODO: Show typing indicator, start generation, and stream tokens
+            }
+        }
+    }
 
-            val inputFeature0 = TensorBuffer.createFixedSize(
-                intArrayOf(1, 224, 224, 3),
-                DataType.FLOAT32
-            )
+    private fun addMessage(message: String, type: String) {
+        chatAdapter.addMessage(Message(message, type))
+        messages.scrollToPosition(chatAdapter.itemCount - 1)
+    }
+}
 
-            val byteCount = 1 * 224 * 224 * 3 * 4
-            val byteBuffer = ByteBuffer.allocateDirect(byteCount)
-            byteBuffer.order(ByteOrder.nativeOrder())
-            inputFeature0.loadBuffer(byteBuffer)
+data class Message(val text: String, val type: String)
 
-            val outputs = model.process(inputFeature0)
-            val outputFeature0 = outputs.outputFeature0AsTensorBuffer
-            val outputArray = outputFeature0.floatArray
-            val firstValue = outputArray.firstOrNull()
+class ChatAdapter : RecyclerView.Adapter<ChatAdapter.MessageViewHolder>() {
 
-            resultTextView.text = "Model ran. First value: $firstValue"
-            progressBar.visibility = View.GONE
+    private val messages = mutableListOf<Message>()
 
-            model.close()
+    fun addMessage(message: Message) {
+        messages.add(message)
+        notifyItemInserted(messages.size - 1)
+    }
+
+    override fun getItemViewType(position: Int): Int {
+        return when (messages[position].type) {
+            "user" -> 0
+            "assistant" -> 1
+            else -> 2 // typing
+        }
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MessageViewHolder {
+        val layout = when (viewType) {
+            0 -> R.layout.item_message_user
+            1 -> R.layout.item_message_assistant
+            else -> R.layout.item_message_typing
+        }
+        val view = LayoutInflater.from(parent.context).inflate(layout, parent, false)
+        return MessageViewHolder(view)
+    }
+
+    override fun onBindViewHolder(holder: MessageViewHolder, position: Int) {
+        val message = messages[position]
+        holder.bind(message)
+    }
+
+    override fun getItemCount() = messages.size
+
+    inner class MessageViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val messageText: TextView? = itemView.findViewById(R.id.messageText)
+
+        fun bind(message: Message) {
+            messageText?.text = message.text
         }
     }
 }
