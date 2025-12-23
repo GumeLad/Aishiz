@@ -1,3 +1,7 @@
 package com.example.aishiz
 
-data class Message(val text: String, val type: String)
+enum class Role {
+    USER, ASSISTANT, TYPING
+}
+
+data class Message(var text: String, val role: Role)

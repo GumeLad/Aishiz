@@ -1,91 +1,84 @@
 package com.example.aishiz
 
 import android.os.Bundle
-import android.view.LayoutInflater
+import android.os.Handler
+import android.os.Looper
 import android.view.View
-import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
-import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import java.util.concurrent.Executors
 
 class MainActivity : AppCompatActivity() {
+    private lateinit var viewModel: MainViewModel
 
     private lateinit var messages: RecyclerView
     private lateinit var promptInput: EditText
     private lateinit var sendButton: Button
-    private val chatAdapter = ChatAdapter()
+    private val chatAdapter by lazy { ChatAdapter(viewModel.messages) }
+    private val executor = Executors.newSingleThreadExecutor()
+    private val handler = Handler(Looper.getMainLooper())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        viewModel = ViewModelProvider(this)[MainViewModel::class.java]
+
         messages = findViewById(R.id.messages)
         promptInput = findViewById(R.id.promptInput)
         sendButton = findViewById(R.id.sendButton)
 
-        messages.layoutManager = LinearLayoutManager(this)
+        messages.layoutManager = LinearLayoutManager(this).apply {
+            stackFromEnd = true
+        }
         messages.adapter = chatAdapter
 
         sendButton.setOnClickListener {
             val prompt = promptInput.text.toString()
             if (prompt.isNotBlank()) {
-                addMessage(prompt, "user")
+                addMessage(prompt, Role.USER)
                 promptInput.text.clear()
-                // TODO: Show typing indicator, start generation, and stream tokens
+                // Show typing indicator
+                addMessage("...", Role.TYPING)
+                // Start generation
+                startGeneration(prompt)
             }
         }
     }
 
-    private fun addMessage(message: String, type: String) {
-        chatAdapter.addMessage(Message(message, type))
-        messages.scrollToPosition(chatAdapter.itemCount - 1)
-    }
-}
-
-data class Message(val text: String, val type: String)
-
-class ChatAdapter : RecyclerView.Adapter<ChatAdapter.MessageViewHolder>() {
-
-    private val messages = mutableListOf<Message>()
-
-    fun addMessage(message: Message) {
-        messages.add(message)
-        notifyItemInserted(messages.size - 1)
-    }
-
-    override fun getItemViewType(position: Int): Int {
-        return when (messages[position].type) {
-            "user" -> 0
-            "assistant" -> 1
-            else -> 2 // typing
+    private fun addMessage(text: String, role: Role) {
+        val message = Message(text, role)
+        runOnUiThread {
+            chatAdapter.addMessage(message)
+            messages.scrollToPosition(chatAdapter.itemCount - 1)
         }
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MessageViewHolder {
-        val layout = when (viewType) {
-            0 -> R.layout.item_message_user
-            1 -> R.layout.item_message_assistant
-            else -> R.layout.item_message_typing
-        }
-        val view = LayoutInflater.from(parent.context).inflate(layout, parent, false)
-        return MessageViewHolder(view)
-    }
+    private fun startGeneration(prompt: String) {
+        executor.execute {
+            // Simulate token generation
+            val fullResponse = "This is a generated response to your prompt: '$prompt'"
+            val words = fullResponse.split(" ")
+            var isFirstToken = true
 
-    override fun onBindViewHolder(holder: MessageViewHolder, position: Int) {
-        val message = messages[position]
-        holder.bind(message)
-    }
-
-    override fun getItemCount() = messages.size
-
-    inner class MessageViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val messageText: TextView? = itemView.findViewById(R.id.messageText)
-
-        fun bind(message: Message) {
-            messageText?.text = message.text
+            for (word in words) {
+                Thread.sleep(200) // Simulate delay for each token
+                if (isFirstToken) {
+                    isFirstToken = false
+                    handler.post {
+                        chatAdapter.removeTypingIndicator()
+                        addMessage("$word ", Role.ASSISTANT)
+                    }
+                } else {
+                    handler.post {
+                        chatAdapter.appendContentToLastMessage("$word ")
+                    }
+                }
+            }
         }
     }
 }
