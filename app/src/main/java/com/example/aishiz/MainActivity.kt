@@ -1,5 +1,6 @@
 package com.example.aishiz
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
@@ -21,6 +22,12 @@ class MainActivity : AppCompatActivity() {
         val runModelButton: Button = findViewById(R.id.btnRunModel)
         val resultTextView: TextView = findViewById(R.id.tvResult)
         val progressBar: ProgressBar = findViewById(R.id.progressBar)
+        val openChatButton: Button = findViewById(R.id.btnOpenChat)
+
+        // Open AI Chat Activity
+        openChatButton.setOnClickListener {
+            startActivity(Intent(this, ChatActivity::class.java))
+        }
 
         runModelButton.setOnClickListener {
             resultTextView.text = "Running model..."

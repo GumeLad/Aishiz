@@ -2,6 +2,7 @@ package com.example.aishiz
 
 import android.content.Context
 import android.util.Log
+import com.google.mediapipe.tasks.genai.llminference.LlmInference
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -10,21 +11,12 @@ import java.io.InputStream
 /**
  * ModelManager handles loading and inference for offline AI models.
  * 
- * This implementation is designed to work with MediaPipe LLM Inference API
- * for maximum flexibility and customization. Once MediaPipe dependency is added,
- * uncomment the MediaPipe-specific code.
- * 
- * To use:
- * 1. Add MediaPipe dependency to build.gradle.kts:
- *    implementation("com.google.mediapipe:tasks-genai:0.10.14")
- * 2. Uncomment the MediaPipe imports and implementation below
- * 3. Load a model using loadModel()
- * 4. Generate responses using generateResponse()
+ * This implementation uses MediaPipe LLM Inference API for maximum
+ * flexibility and customization with offline models.
  */
 class ModelManager(private val context: Context) {
     
-    // Uncomment when MediaPipe dependency is added:
-    // private var llmInference: LlmInference? = null
+    private var llmInference: LlmInference? = null
     
     companion object {
         private const val TAG = "ModelManager"
@@ -156,8 +148,6 @@ class ModelManager(private val context: Context) {
             val file = File(config.modelPath)
             validateModelFile(file).getOrThrow()
             
-            // TODO: Uncomment when MediaPipe dependency is added
-            /*
             val options = LlmInference.LlmInferenceOptions.builder()
                 .setModelPath(config.modelPath)
                 .setTemperature(config.temperature)
@@ -172,12 +162,10 @@ class ModelManager(private val context: Context) {
             
             // Create new instance
             llmInference = LlmInference.createFromOptions(context, options)
-            */
             
             Log.i(TAG, "Model loaded successfully")
             Log.i(TAG, "Config: temp=${config.temperature}, topK=${config.topK}, topP=${config.topP}, maxTokens=${config.maxTokens}")
             
-            // For now, just simulate success until MediaPipe is added
             Result.success(Unit)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to load model", e)
@@ -185,6 +173,7 @@ class ModelManager(private val context: Context) {
         }
     }
     
+    /**
     /**
      * Generates a response for the given prompt.
      * 
@@ -197,8 +186,6 @@ class ModelManager(private val context: Context) {
         onPartialResult: ((String) -> Unit)? = null
     ): Result<String> = withContext(Dispatchers.IO) {
         try {
-            // TODO: Uncomment when MediaPipe dependency is added
-            /*
             val inference = llmInference ?: return@withContext Result.failure(
                 IllegalStateException("Model not loaded. Call loadModel() first.")
             )
@@ -208,7 +195,6 @@ class ModelManager(private val context: Context) {
             
             if (onPartialResult != null) {
                 // Streaming response - provides real-time updates
-                inference.generateResponseAsync(prompt)
                 for (partialResult in inference.generateResponseAsync(prompt)) {
                     partialResult?.let { partial ->
                         fullResponse.append(partial)
@@ -225,11 +211,6 @@ class ModelManager(private val context: Context) {
             
             Log.d(TAG, "Generated ${fullResponse.length} characters")
             Result.success(fullResponse.toString())
-            */
-            
-            // Placeholder until MediaPipe is added
-            Log.w(TAG, "MediaPipe not yet integrated. Add dependency and uncomment code.")
-            Result.failure(IllegalStateException("MediaPipe LLM Inference not yet integrated. See OFFLINE_AI_MODEL_GUIDE.md"))
         } catch (e: Exception) {
             Log.e(TAG, "Failed to generate response", e)
             Result.failure(e)
@@ -268,11 +249,8 @@ class ModelManager(private val context: Context) {
      * Call this when done with the model or switching to a different model.
      */
     fun close() {
-        // TODO: Uncomment when MediaPipe dependency is added
-        /*
         llmInference?.close()
         llmInference = null
-        */
         Log.i(TAG, "Model closed")
     }
     
@@ -280,9 +258,7 @@ class ModelManager(private val context: Context) {
      * Checks if a model is currently loaded.
      */
     fun isModelLoaded(): Boolean {
-        // TODO: Uncomment when MediaPipe dependency is added
-        // return llmInference != null
-        return false // Placeholder
+        return llmInference != null
     }
     
     /**
