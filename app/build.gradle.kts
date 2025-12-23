@@ -68,6 +68,9 @@ dependencies {
     implementation(libs.tflitesupport)
     implementation(libs.tensorflow.lite.metadata)
 
+    // MediaPipe for LLM inference
+    implementation("com.google.mediapipe:tasks-genai:0.10.14")
+
     // AndroidX / Material basics
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
@@ -75,6 +78,9 @@ dependencies {
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.recyclerview)
     implementation(libs.androidx.fragment)
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
+    implementation("androidx.activity:activity-ktx:1.9.3")
 
     testImplementation(libs.junit)
 

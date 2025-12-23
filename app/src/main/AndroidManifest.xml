@@ -21,6 +21,12 @@
             </intent-filter>
         </activity>
 
+        <!-- AI Chat Activity -->
+        <activity
+            android:name=".ChatActivity"
+            android:exported="false"
+            android:theme="@style/Theme.AiShiz" />
+
         <!-- App Widget Provider -->
         <receiver
             android:name="com.example.aishiz.aishizWidgetProvider"
