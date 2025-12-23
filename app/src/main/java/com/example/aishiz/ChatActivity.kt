@@ -81,7 +81,7 @@ class ChatActivity : AppCompatActivity() {
 
     private fun loadModelFromUri(uri: Uri) {
         binding.progressBar.visibility = View.VISIBLE
-        binding.tvModelStatus.text = "Loading model..."
+        binding.tvModelStatus.text = "Loading LLM..."
 
         lifecycleScope.launch {
             try {
@@ -89,7 +89,7 @@ class ChatActivity : AppCompatActivity() {
                 val inputStream = contentResolver.openInputStream(uri)
                     ?: throw IllegalStateException("Cannot open file")
 
-                val fileName = "phi35_mini_${System.currentTimeMillis()}.bin"
+                val fileName = "llm_model_${System.currentTimeMillis()}.bin"
                 val copyResult = modelManager.copyModelFromUri(inputStream, fileName)
 
                 copyResult.fold(
@@ -121,7 +121,7 @@ class ChatActivity : AppCompatActivity() {
         modelManager.loadModel(currentConfig).fold(
             onSuccess = {
                 currentModelPath = modelPath
-                binding.tvModelStatus.text = "✓ Model loaded successfully"
+                binding.tvModelStatus.text = "✓ LLM ready"
                 binding.btnModelSettings.visibility = View.VISIBLE
                 binding.progressBar.visibility = View.GONE
 
@@ -131,7 +131,7 @@ class ChatActivity : AppCompatActivity() {
                     .putString("last_model_path", modelPath)
                     .apply()
 
-                Toast.makeText(this, "Model ready! Start chatting.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "LLM ready! Start chatting.", Toast.LENGTH_SHORT).show()
             },
             onFailure = { error ->
                 showError("Failed to load: ${error.message}")
@@ -145,7 +145,7 @@ class ChatActivity : AppCompatActivity() {
         if (message.isEmpty()) return
 
         if (!modelManager.isModelLoaded()) {
-            Toast.makeText(this, "Please load a model first", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Please load an LLM first", Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -167,16 +167,18 @@ class ChatActivity : AppCompatActivity() {
         dialogBinding.sliderTopK.value = currentConfig.topK.toFloat()
         dialogBinding.sliderTopP.value = currentConfig.topP
         dialogBinding.sliderMaxTokens.value = currentConfig.maxTokens.toFloat()
+        dialogBinding.sliderRandomSeed.value = currentConfig.randomSeed.toFloat()
         
         // Update value labels
-        dialogBinding.tvTemperatureValue.text = String.format("%.1f", currentConfig.temperature)
+        dialogBinding.tvTemperatureValue.text = String.format("%.2f", currentConfig.temperature)
         dialogBinding.tvTopKValue.text = currentConfig.topK.toString()
         dialogBinding.tvTopPValue.text = String.format("%.2f", currentConfig.topP)
         dialogBinding.tvMaxTokensValue.text = currentConfig.maxTokens.toString()
+        dialogBinding.tvRandomSeedValue.text = currentConfig.randomSeed.toString()
 
-        // Setup sliders
+        // Setup sliders with more precise steps
         dialogBinding.sliderTemperature.addOnChangeListener { _, value, _ ->
-            dialogBinding.tvTemperatureValue.text = String.format("%.1f", value)
+            dialogBinding.tvTemperatureValue.text = String.format("%.2f", value)
         }
         dialogBinding.sliderTopK.addOnChangeListener { _, value, _ ->
             dialogBinding.tvTopKValue.text = value.toInt().toString()
@@ -187,27 +189,42 @@ class ChatActivity : AppCompatActivity() {
         dialogBinding.sliderMaxTokens.addOnChangeListener { _, value, _ ->
             dialogBinding.tvMaxTokensValue.text = value.toInt().toString()
         }
+        dialogBinding.sliderRandomSeed.addOnChangeListener { _, value, _ ->
+            dialogBinding.tvRandomSeedValue.text = value.toInt().toString()
+        }
 
         // Preset buttons
         dialogBinding.btnPresetPrecise.setOnClickListener {
             dialogBinding.sliderTemperature.value = 0.3f
             dialogBinding.sliderTopK.value = 10f
             dialogBinding.sliderTopP.value = 0.85f
+            dialogBinding.sliderMaxTokens.value = 512f
         }
         dialogBinding.btnPresetBalanced.setOnClickListener {
             dialogBinding.sliderTemperature.value = 0.8f
             dialogBinding.sliderTopK.value = 40f
             dialogBinding.sliderTopP.value = 0.95f
+            dialogBinding.sliderMaxTokens.value = 1024f
         }
         dialogBinding.btnPresetCreative.setOnClickListener {
             dialogBinding.sliderTemperature.value = 1.2f
             dialogBinding.sliderTopK.value = 50f
             dialogBinding.sliderTopP.value = 0.95f
+            dialogBinding.sliderMaxTokens.value = 2048f
         }
 
         val dialog = AlertDialog.Builder(this)
             .setView(dialogBinding.root)
             .create()
+
+        // Reset to defaults
+        dialogBinding.btnReset.setOnClickListener {
+            dialogBinding.sliderTemperature.value = 0.8f
+            dialogBinding.sliderTopK.value = 40f
+            dialogBinding.sliderTopP.value = 0.95f
+            dialogBinding.sliderMaxTokens.value = 1024f
+            dialogBinding.sliderRandomSeed.value = 0f
+        }
 
         dialogBinding.btnCancel.setOnClickListener {
             dialog.dismiss()
@@ -218,7 +235,8 @@ class ChatActivity : AppCompatActivity() {
                 dialogBinding.sliderTemperature.value,
                 dialogBinding.sliderTopK.value.toInt(),
                 dialogBinding.sliderTopP.value,
-                dialogBinding.sliderMaxTokens.value.toInt()
+                dialogBinding.sliderMaxTokens.value.toInt(),
+                dialogBinding.sliderRandomSeed.value.toInt()
             )
             dialog.dismiss()
         }
@@ -226,14 +244,15 @@ class ChatActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    private fun applySettings(temperature: Float, topK: Int, topP: Float, maxTokens: Int) {
+    private fun applySettings(temperature: Float, topK: Int, topP: Float, maxTokens: Int, randomSeed: Int) {
         currentModelPath?.let { path ->
             currentConfig = ModelManager.ModelConfig(
                 modelPath = path,
                 temperature = temperature,
                 topK = topK,
                 topP = topP,
-                maxTokens = maxTokens
+                maxTokens = maxTokens,
+                randomSeed = randomSeed
             )
 
             binding.progressBar.visibility = View.VISIBLE
@@ -266,7 +285,7 @@ class ChatActivity : AppCompatActivity() {
         savedPath?.let { path ->
             if (java.io.File(path).exists()) {
                 lifecycleScope.launch {
-                    binding.tvModelStatus.text = "Loading previous model..."
+                    binding.tvModelStatus.text = "Loading previous LLM..."
                     binding.progressBar.visibility = View.VISIBLE
                     loadModel(path)
                 }
