@@ -43,9 +43,10 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
-    buildFeatures {
-        viewBinding = true
-        mlModelBinding = true
+    android {
+        buildFeatures {
+            viewBinding = true
+        }
     }
     externalNativeBuild {
         cmake {
@@ -53,11 +54,7 @@ android {
             version = "3.22.1"
         }
     }
-    packagingOptions {
-        jniLibs {
-            useLegacyPackaging = false
-        }
-    }
+
     buildToolsVersion = "36.1.0"
     ndkVersion = "29.0.14206865"
     dependenciesInfo {
