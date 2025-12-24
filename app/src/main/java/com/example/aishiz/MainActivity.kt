@@ -4,44 +4,47 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.View
-import android.widget.Button
-import android.widget.EditText
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
+import com.example.aishiz.databinding.ActivityMainBinding
 import java.util.concurrent.Executors
 
 class MainActivity : AppCompatActivity() {
+    private lateinit var binding: ActivityMainBinding
     private lateinit var viewModel: MainViewModel
 
-    private lateinit var messages: RecyclerView
-    private lateinit var promptInput: EditText
-    private lateinit var sendButton: Button
     private val chatAdapter by lazy { ChatAdapter(viewModel.messages) }
     private val executor = Executors.newSingleThreadExecutor()
     private val handler = Handler(Looper.getMainLooper())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            insets
+        }
 
         viewModel = ViewModelProvider(this)[MainViewModel::class.java]
 
-        messages = findViewById(R.id.messages)
-        promptInput = findViewById(R.id.promptInput)
-        sendButton = findViewById(R.id.sendButton)
-
-        messages.layoutManager = LinearLayoutManager(this).apply {
+        binding.messages.layoutManager = LinearLayoutManager(this).apply {
             stackFromEnd = true
         }
-        messages.adapter = chatAdapter
+        binding.messages.adapter = chatAdapter
 
-        sendButton.setOnClickListener {
-            val prompt = promptInput.text.toString()
+        binding.sendButton.setOnClickListener {
+            val prompt = binding.promptInput.text.toString()
             if (prompt.isNotBlank()) {
                 addMessage(prompt, Role.USER)
-                promptInput.text.clear()
+                binding.promptInput.text.clear()
                 // Show typing indicator
                 addMessage("...", Role.TYPING)
                 // Start generation
@@ -54,7 +57,7 @@ class MainActivity : AppCompatActivity() {
         val message = Message(text, role)
         runOnUiThread {
             chatAdapter.addMessage(message)
-            messages.scrollToPosition(chatAdapter.itemCount - 1)
+            binding.messages.scrollToPosition(chatAdapter.itemCount - 1)
         }
     }
 

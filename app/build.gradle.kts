@@ -11,7 +11,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.aishiz"
-        minSdk = 30
+        minSdk = 34
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
@@ -53,8 +53,13 @@ android {
             version = "3.22.1"
         }
     }
+    packagingOptions {
+        jniLibs {
+            useLegacyPackaging = false
+        }
+    }
     buildToolsVersion = "36.1.0"
-    ndkVersion = "27.0.12077973"
+    ndkVersion = "29.0.14206865"
     dependenciesInfo {
         includeInApk = true
         includeInBundle = true
