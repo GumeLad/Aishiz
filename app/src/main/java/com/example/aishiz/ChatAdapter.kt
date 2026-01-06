@@ -49,6 +49,27 @@ class ChatAdapter(private val messages: MutableList<Message>) : RecyclerView.Ada
         }
     }
 
+    fun addMessage(message: Message) {
+        messages.add(message)
+        notifyItemInserted(messages.size - 1)
+    }
+
+    fun removeTypingIndicator() {
+        if (messages.isNotEmpty() && messages.last().role == Role.TYPING) {
+            val lastIndex = messages.size - 1
+            messages.removeAt(lastIndex)
+            notifyItemRemoved(lastIndex)
+        }
+    }
+
+    fun appendContentToLastMessage(content: String) {
+        if (messages.isNotEmpty() && messages.last().role == Role.ASSISTANT) {
+            val lastMessage = messages.last()
+            lastMessage.text += content
+            notifyItemChanged(messages.size - 1)
+        }
+    }
+
     class UserViewHolder(private val binding: ItemMessageUserBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(message: Message) {
             binding.messageText.text = message.text

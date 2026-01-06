@@ -11,7 +11,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.aishiz"
-        minSdk = 30
+        minSdk = 34
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
@@ -43,9 +43,10 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
-    buildFeatures {
-        viewBinding = true
-        mlModelBinding = true
+    android {
+        buildFeatures {
+            viewBinding = true
+        }
     }
     externalNativeBuild {
         cmake {
@@ -53,8 +54,9 @@ android {
             version = "3.22.1"
         }
     }
+
     buildToolsVersion = "36.1.0"
-    ndkVersion = "27.0.12077973"
+    ndkVersion = "29.0.14206865"
     dependenciesInfo {
         includeInApk = true
         includeInBundle = true
@@ -85,6 +87,6 @@ dependencies {
     testImplementation(libs.junit)
 
     // Android instrumented testing
-    androidTestImplementation("androidx.test.ext:junit:1.2.1")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
+    androidTestImplementation("androidx.test.ext:junit:1.3.0")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
 }
